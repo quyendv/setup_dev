@@ -37,6 +37,7 @@ Write-Start -msg "Installing Scoop's packages"
     scoop install <#Web browser #> googlechrome # firefox brave
     scoop install <# Tool #> ripgrep fzf # which alacritty neofetch obs-studio
     scoop install <# Coding #> neovim windows-terminal vscode nodejs python postman # gcc openjdk
+    scoop install <# Windows #> powertoys
     # scoop install <# Runtime lib #> vagrant
     # Start-Process -Wait powershell -verb runas -ArgumentList "scoop install DejaVuSanMono-NF-Mono vcredist-aio nonportable/virtualbox-np docker"
 Write-Done

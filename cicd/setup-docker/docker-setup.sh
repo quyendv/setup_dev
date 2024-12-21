@@ -22,3 +22,4 @@ sudo systemctl is-active --quiet docker && echo "Docker is running" || echo "Doc
 
 # Add user to docker group
 sudo usermod -aG docker ${USER}
+sudo newgrp docker # used to change the current group ID during a login session

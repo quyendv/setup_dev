@@ -3,64 +3,78 @@
   hosts: all # specify the hosts group
   become: true
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    - name: Install prerequisites
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - software-properties-common
-          - gnupg
-        state: present
-
-    - name: Debug OS information
-      debug:
-        msg: 'Distribution: {{ ansible_distribution }}, Release: {{ ansible_distribution_release }}, Architecture: {{ ansible_architecture }}'
-        # example (for ubuntu 22.04): "Distribution: Ubuntu, Release: jammy, Architecture: x86_64"  => Different from the shell command: lsb_release -cs (jammy) & dpkg --print-architecture (amd64)
-
-    - name: Get system architecture
-      shell: dpkg --print-architecture
-      register: system_architecture
+    - name: Check if Docker service is running
+      command: systemctl is-active docker
+      register: docker_status
+      ignore_errors: true
       changed_when: false
 
-    - name: Create keyrings directory
-      file:
-        path: /usr/share/keyrings
-        state: directory
-        mode: '0755'
+    - name: Print Docker running status
+      debug:
+        msg: 'Docker is already running'
+      when: docker_status.stdout == "active"
 
-    - name: Add Docker GPG key
-      shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-      args:
-        creates: /usr/share/keyrings/docker-archive-keyring.gpg
+    - name: Install Docker if not running
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
 
-    - name: Add Docker repository
-      ansible.builtin.copy:
-        dest: /etc/apt/sources.list.d/docker.list
-        content: 'deb [arch={{ system_architecture.stdout }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable'
-        mode: '0644'
+        - name: Install prerequisites
+          apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - software-properties-common
+              - gnupg
+            state: present
 
-    - name: Update apt cache after adding repository
-      apt:
-        update_cache: yes
+        - name: Debug OS information
+          debug:
+            msg: 'Distribution: {{ ansible_distribution }}, Release: {{ ansible_distribution_release }}, Architecture: {{ ansible_architecture }}'
+            # example (for ubuntu 22.04): "Distribution: Ubuntu, Release: jammy, Architecture: x86_64"  => Different from the shell command: lsb_release -cs (jammy) & dpkg --print-architecture (amd64)
 
-    - name: Install Docker
-      apt:
-        name: docker-ce
-        state: present
+        - name: Get system architecture
+          shell: dpkg --print-architecture
+          register: system_architecture
+          changed_when: false
 
-    - name: Ensure Docker service is running
-      service:
-        name: docker
-        state: started
-        enabled: yes
+        - name: Create keyrings directory
+          file:
+            path: /usr/share/keyrings
+            state: directory
+            mode: '0755'
 
-    - name: Add user to docker group
-      user:
-        name: '{{ ansible_user }}'
-        groups: docker
-        append: yes
+        - name: Add Docker GPG key
+          shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          args:
+            creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+        - name: Add Docker repository
+          ansible.builtin.copy:
+            dest: /etc/apt/sources.list.d/docker.list
+            content: 'deb [arch={{ system_architecture.stdout }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable'
+            mode: '0644'
+
+        - name: Update apt cache after adding repository
+          apt:
+            update_cache: yes
+
+        - name: Install Docker
+          apt:
+            name: docker-ce
+            state: present
+
+        - name: Ensure Docker service is running
+          service:
+            name: docker
+            state: started
+            enabled: yes
+
+        - name: Add user to docker group
+          user:
+            name: '{{ ansible_user }}'
+            groups: docker
+            append: yes
+      when: docker_status.stdout != "active"

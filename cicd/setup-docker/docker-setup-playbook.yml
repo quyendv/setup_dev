@@ -75,6 +75,9 @@
         - name: Add user to docker group
           user:
             name: '{{ ansible_user }}'
-            groups: docker
-            append: yes
+
+        - name: Apply group changes immediately
+          shell: newgrp docker
+          args:
+            executable: /bin/bash
       when: docker_status.stdout != "active"

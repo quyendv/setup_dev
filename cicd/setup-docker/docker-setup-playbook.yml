@@ -76,8 +76,11 @@
           user:
             name: '{{ ansible_user }}'
 
+        #- name: Apply group changes immediately
+        #  shell: newgrp docker
+        #  args:
+        #    executable: /bin/bash
+
         - name: Apply group changes immediately
-          shell: newgrp docker
-          args:
-            executable: /bin/bash
+          meta: reset_connection
       when: docker_status.stdout != "active"

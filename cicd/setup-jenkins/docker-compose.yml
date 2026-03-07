@@ -3,7 +3,7 @@ version: '3.8'
 services:
   jenkins:
     container_name: jenkins-blueocean
-    image: myjenkins-blueocean:2.426.3-1
+    image: myjenkins-blueocean:2.541.2-1
     build:
       context: .
       dockerfile: Dockerfile
